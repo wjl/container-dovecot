@@ -39,6 +39,11 @@ EXPOSE \
 	# Sieve
 	4190/tcp
 
+# Set permissions on /srv/mail before making the volume.
+RUN \
+	mkdir -p /srv/mail && \
+	chown 1000:1000 /srv/mail
+
 VOLUME \
 	# Dovecot configuration
 	/etc/dovecot \
