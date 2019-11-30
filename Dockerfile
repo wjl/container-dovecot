@@ -1,3 +1,34 @@
+FROM alpine as fts-xapian
+
+# Install packages needed to build fts-xapian plugin
+RUN \
+	apk update && \
+	apk upgrade && \
+	apk add \
+		autoconf \
+		automake \
+		build-base \
+		coreutils \
+		dovecot-dev \
+		git \
+		icu-dev \
+		libtool \
+		xapian-core-dev \
+	&& \
+	true
+
+# Build fts-xapian plugin.
+RUN \
+	git clone https://github.com/grosjo/fts-xapian && \
+	cd fts-xapian && \
+	libtoolize && \
+	(autoreconf || true) && \
+	automake --add-missing && \
+	autoreconf && \
+	./configure --with-dovecot=/usr/lib/dovecot && \
+	make && \
+	make install
+
 FROM alpine
 LABEL author="wjl@icecavern.net"
 
@@ -7,13 +38,17 @@ RUN \
 	apk upgrade && \
 	apk add \
 		dovecot \
-		dovecot-fts-lucene \
 		dovecot-lmtpd \
 		dovecot-pgsql \
 		dovecot-pigeonhole-plugin \
 		dovecot-pop3d \
+		icu-libs \
+		xapian-core \
 	&& \
 	rm -r /var/cache/apk/*
+
+# Install fts-xapian plugin.
+COPY --from=fts-xapian /usr/lib/dovecot/*fts_xapian*.so /usr/lib/dovecot/
 
 ENTRYPOINT ["/usr/sbin/dovecot", "-F"]
 
